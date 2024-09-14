@@ -1,4 +1,4 @@
-const url = 'http://11092j276k4q7gr29tbkq07o7fd612rqg.bc.20.rs/xxxx?xxx=xxx';
+const url = 'https://11092j276k4q7gr29tbkq07o7fd612rqg.bc.20.rs/xxxx?xxx=xxx';
 
 fetch(url)
   .then(response => {
