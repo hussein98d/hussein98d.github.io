@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Immunify Quote Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -49,24 +49,6 @@
         button:hover {
             background-color: #0056b3;
         }
-        #preview {
-            display: none;
-            background-color: white;
-            padding: 30px;
-            margin-top: 20px;
-            border-radius: 10px;
-        }
-        .confidential {
-            color: red;
-            font-weight: bold;
-            text-align: center;
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        .logo {
-            max-width: 200px;
-            margin-bottom: 20px;
-        }
     </style>
 </head>
 <body>
@@ -95,21 +77,6 @@
         <button onclick="generatePDF()">Generate PDF</button>
     </div>
 
-    <div id="preview">
-        <img src="https://cdn.prod.website-files.com/630e5c4a69cd616fda8ec74d/6318cd3609b5a9a97f42bd39_web-immunify-logo-inverted-rgb.svg" class="logo">
-        <div class="confidential">CONFIDENTIAL</div>
-        <h2>Penetration Testing Quote</h2>
-        <p><strong>Date:</strong> <span id="current-date"></span></p>
-        <p><strong>Scope:</strong><br><span id="preview-scope"></span></p>
-        <p><strong>Duration:</strong> <span id="preview-duration"></span> days</p>
-        <p><strong>Retest Duration:</strong> <span id="preview-retest"></span> days</p>
-        <p><strong>Rate per Day:</strong> $<span id="preview-rate"></span></p>
-        <p><strong>Total Price:</strong> $<span id="preview-total"></span></p>
-        <hr>
-        <p>Web Immunify<br>
-        <a href="https://webimmunify.com">www.webimmunify.com</a></p>
-    </div>
-
     <script>
         // Calculate total when inputs change
         ['duration', 'retest', 'rate'].forEach(id => {
@@ -124,32 +91,95 @@
             document.getElementById('total').value = total;
         }
 
-        function generatePDF() {
-            // Update preview
-            document.getElementById('current-date').textContent = new Date().toLocaleDateString();
-            document.getElementById('preview-scope').textContent = document.getElementById('scope').value;
-            document.getElementById('preview-duration').textContent = document.getElementById('duration').value;
-            document.getElementById('preview-retest').textContent = document.getElementById('retest').value;
-            document.getElementById('preview-rate').textContent = document.getElementById('rate').value;
-            document.getElementById('preview-total').textContent = document.getElementById('total').value;
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
             
-            // Show preview for HTML2Canvas
-            document.getElementById('preview').style.display = 'block';
+            // Set font
+            doc.setFont("helvetica");
+            
+            // Add logo
+            const logoUrl = 'https://cdn.prod.website-files.com/630e5c4a69cd616fda8ec74d/6318cd3609b5a9a97f42bd39_web-immunify-logo-inverted-rgb.svg';
+            
+            // Convert SVG to PNG (you might need to host this image as PNG for better compatibility)
+            const img = new Image();
+            img.src = logoUrl;
+            doc.addImage(img, 'PNG', 15, 15, 80, 20);
 
-            // Create PDF
-            html2canvas(document.getElementById('preview')).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jspdf.jsPDF();
-                const imgProps = pdf.getImageProperties(imgData);
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save('Web_Immunify_Quote.pdf');
-                
-                // Hide preview after generating PDF
-                document.getElementById('preview').style.display = 'none';
+            // Add CONFIDENTIAL watermark
+            doc.setFontSize(30);
+            doc.setTextColor(220, 0, 0);
+            doc.text('CONFIDENTIAL', doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
+
+            // Reset text color
+            doc.setTextColor(0, 0, 0);
+
+            // Add current date
+            doc.setFontSize(10);
+            const date = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
             });
+            doc.text(`Date: ${date}`, 15, 50);
+
+            // Add quote number
+            const quoteNumber = `Q${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+            doc.text(`Quote Reference: ${quoteNumber}`, 15, 57);
+
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Penetration Testing Quote', 15, 70);
+
+            // Add scope section
+            doc.setFontSize(12);
+            doc.text('Scope of Work:', 15, 85);
+            const scope = doc.splitTextToSize(document.getElementById('scope').value, 180);
+            doc.text(scope, 15, 92);
+
+            // Calculate Y position after scope text
+            let yPos = 95 + (scope.length * 7);
+
+            // Add service details table
+            const tableData = [
+                ['Service Details', 'Duration', 'Rate (USD)', 'Amount (USD)'],
+                ['Penetration Testing', 
+                 `${document.getElementById('duration').value} days`, 
+                 `$${document.getElementById('rate').value}/day`,
+                 `$${document.getElementById('duration').value * document.getElementById('rate').value}`
+                ],
+                ['Retest Phase', 
+                 `${document.getElementById('retest').value} days`, 
+                 `$${document.getElementById('rate').value}/day`,
+                 `$${document.getElementById('retest').value * document.getElementById('rate').value}`
+                ],
+                ['Total', '', '', `$${document.getElementById('total').value}`]
+            ];
+
+            doc.autoTable({
+                startY: yPos,
+                head: [tableData[0]],
+                body: tableData.slice(1),
+                theme: 'grid',
+                headStyles: { fillColor: [0, 123, 255], textColor: 255 },
+                styles: { halign: 'center' },
+                columnStyles: {
+                    0: { cellWidth: 60 },
+                    1: { cellWidth: 40 },
+                    2: { cellWidth: 40 },
+                    3: { cellWidth: 40 }
+                }
+            });
+
+            // Add footer
+            const pageHeight = doc.internal.pageSize.height;
+            doc.setFontSize(10);
+            doc.text('Web Immunify', 15, pageHeight - 20);
+            doc.text('www.webimmunify.com', 15, pageHeight - 15);
+            doc.text('This document is strictly confidential', doc.internal.pageSize.getWidth() - 15, pageHeight - 15, { align: 'right' });
+
+            // Save the PDF
+            doc.save('Web_Immunify_Quote.pdf');
         }
     </script>
 </body>
