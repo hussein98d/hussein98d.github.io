@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-        body {
+         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
@@ -27,12 +27,14 @@
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
+            color: #333;
         }
         textarea, input {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 14px;
         }
         textarea {
             min-height: 100px;
@@ -41,34 +43,45 @@
         button {
             background-color: #007bff;
             color: white;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
         }
         button:hover {
             background-color: #0056b3;
+        }
+        h1 {
+            color: #007bff;
+            margin-bottom: 30px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="form-container">
-        <h1>Quote Generator</h1>
+        <h1>Web Immunify Quote Generator</h1>
+        <div class="form-group">
+            <label for="projectName">Project Name/Title:</label>
+            <input type="text" id="projectName" required placeholder="Enter project name">
+        </div>
         <div class="form-group">
             <label for="scope">Scope:</label>
-            <textarea id="scope" required></textarea>
+            <textarea id="scope" required placeholder="Enter project scope"></textarea>
         </div>
         <div class="form-group">
             <label for="duration">Duration (days):</label>
-            <input type="number" id="duration" required min="1">
+            <input type="number" id="duration" required min="1" placeholder="Enter duration">
         </div>
         <div class="form-group">
             <label for="retest">Retest Duration (days):</label>
-            <input type="number" id="retest" required min="1">
+            <input type="number" id="retest" required min="1" placeholder="Enter retest duration">
         </div>
         <div class="form-group">
             <label for="rate">Price per Day ($):</label>
-            <input type="number" id="rate" required min="1">
+            <input type="number" id="rate" required min="1" placeholder="Enter daily rate">
         </div>
         <div class="form-group">
             <label for="total">Total Price ($):</label>
@@ -77,7 +90,7 @@
         <button onclick="generatePDF()">Generate PDF</button>
     </div>
 
-    <script>
+     <script>
         // Calculate total when inputs change
         ['duration', 'retest', 'rate'].forEach(id => {
             document.getElementById(id).addEventListener('input', calculateTotal);
@@ -94,19 +107,31 @@
         async function generatePDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
-            // Set font
-            doc.setFont("helvetica");
-            
-            // Add logo
-            const logoUrl = 'https://cdn.prod.website-files.com/630e5c4a69cd616fda8ec74d/6318cd3609b5a9a97f42bd39_web-immunify-logo-inverted-rgb.svg';
-            
-            // Convert SVG to PNG (you might need to host this image as PNG for better compatibility)
-            const img = new Image();
-            img.src = logoUrl;
-            doc.addImage(img, 'PNG', 15, 15, 80, 20);
 
-            // Add CONFIDENTIAL watermark
+            // Function to add watermark
+            function addWatermark() {
+                doc.setFontSize(60);
+                doc.setTextColor(245, 245, 245);
+                doc.setFont("helvetica", "bold");
+                doc.text("CONFIDENTIAL", doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() / 2, {
+                    align: "center",
+                    angle: 45
+                });
+                doc.setTextColor(0, 0, 0);
+            }
+
+            // Add watermark
+            addWatermark();
+
+            // Load and add logo
+            const logoImg = new Image();
+            logoImg.src = 'https://pbs.twimg.com/profile_images/1583184042354216976/SjLjd0Sh_400x400.jpg';
+            await new Promise((resolve) => {
+                logoImg.onload = resolve;
+            });
+            doc.addImage(logoImg, 'JPEG', 15, 15, 40, 40);
+
+            // Add CONFIDENTIAL header
             doc.setFontSize(30);
             doc.setTextColor(220, 0, 0);
             doc.text('CONFIDENTIAL', doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
@@ -114,46 +139,79 @@
             // Reset text color
             doc.setTextColor(0, 0, 0);
 
-            // Add current date
+            // Add current date and quote number
             doc.setFontSize(10);
             const date = new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric' 
             });
-            doc.text(`Date: ${date}`, 15, 50);
-
-            // Add quote number
+            doc.text(`Date: ${date}`, 15, 65);
             const quoteNumber = `Q${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
-            doc.text(`Quote Reference: ${quoteNumber}`, 15, 57);
+            doc.text(`Quote Reference: ${quoteNumber}`, 15, 72);
 
-            // Add title
-            doc.setFontSize(18);
-            doc.text('Penetration Testing Quote', 15, 70);
+            // Add Project Name
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text('Project:', 15, 85);
+            doc.setFont("helvetica", "normal");
+            doc.text(document.getElementById('projectName').value, 15, 92);
+
+            // Add Methodology Overview
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text('Methodology Overview:', 15, 105);
+            doc.setFont("helvetica", "normal");
+            const methodology = [
+                '• OWASP Top 10 Testing',
+                '• Comprehensive Reconnaissance',
+                '• Advanced Private Testing Techniques',
+                '• Manual and Automated Testing Approaches'
+            ];
+            methodology.forEach((item, index) => {
+                doc.text(item, 20, 112 + (index * 7));
+            });
+
+            // Add Deliverables
+            doc.setFont("helvetica", "bold");
+            doc.text('Deliverables:', 15, 145);
+            doc.setFont("helvetica", "normal");
+            doc.text('• Comprehensive Penetration Testing Report including:', 20, 152);
+            doc.text('  - Executive Summary', 20, 159);
+            doc.text('  - Detailed Technical Findings', 20, 166);
+            doc.text('  - Risk Assessment and Impact Analysis', 20, 173);
+            doc.text('  - Remediation Recommendations', 20, 180);
 
             // Add scope section
-            doc.setFontSize(12);
-            doc.text('Scope of Work:', 15, 85);
+            doc.setFont("helvetica", "bold");
+            doc.text('Scope of Work:', 15, 195);
+            doc.setFont("helvetica", "normal");
             const scope = doc.splitTextToSize(document.getElementById('scope').value, 180);
-            doc.text(scope, 15, 92);
+            doc.text(scope, 15, 202);
 
             // Calculate Y position after scope text
-            let yPos = 95 + (scope.length * 7);
+            let yPos = 205 + (scope.length * 7);
 
             // Add service details table
+            const duration = Number(document.getElementById('duration').value);
+            const retest = Number(document.getElementById('retest').value);
+            const rate = Number(document.getElementById('rate').value);
+
+            const formatCurrency = (num) => `$${Number(num).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
             const tableData = [
                 ['Service Details', 'Duration', 'Rate (USD)', 'Amount (USD)'],
                 ['Penetration Testing', 
-                 `${document.getElementById('duration').value} days`, 
-                 `$${document.getElementById('rate').value}/day`,
-                 `$${document.getElementById('duration').value * document.getElementById('rate').value}`
+                 `${duration} days`, 
+                 formatCurrency(rate) + '/day',
+                 formatCurrency(duration * rate)
                 ],
                 ['Retest Phase', 
-                 `${document.getElementById('retest').value} days`, 
-                 `$${document.getElementById('rate').value}/day`,
-                 `$${document.getElementById('retest').value * document.getElementById('rate').value}`
+                 `${retest} days`, 
+                 formatCurrency(rate) + '/day',
+                 formatCurrency(retest * rate)
                 ],
-                ['Total', '', '', `$${document.getElementById('total').value}`]
+                ['Total', '', '', formatCurrency(document.getElementById('total').value)]
             ];
 
             doc.autoTable({
@@ -161,8 +219,17 @@
                 head: [tableData[0]],
                 body: tableData.slice(1),
                 theme: 'grid',
-                headStyles: { fillColor: [0, 123, 255], textColor: 255 },
-                styles: { halign: 'center' },
+                headStyles: { 
+                    fillColor: [0, 123, 255], 
+                    textColor: 255,
+                    fontSize: 12,
+                    fontStyle: 'bold'
+                },
+                styles: { 
+                    halign: 'center',
+                    fontSize: 11,
+                    lineWidth: 0.5,
+                },
                 columnStyles: {
                     0: { cellWidth: 60 },
                     1: { cellWidth: 40 },
@@ -173,10 +240,19 @@
 
             // Add footer
             const pageHeight = doc.internal.pageSize.height;
+            const footerPosition = pageHeight - 20;
+
+            // Draw line above footer
+            doc.setDrawColor(0, 123, 255);
+            doc.setLineWidth(0.5);
+            doc.line(15, footerPosition - 5, doc.internal.pageSize.width - 15, footerPosition - 5);
+
+            // Add footer text
             doc.setFontSize(10);
-            doc.text('Web Immunify', 15, pageHeight - 20);
-            doc.text('www.webimmunify.com', 15, pageHeight - 15);
-            doc.text('This document is strictly confidential', doc.internal.pageSize.getWidth() - 15, pageHeight - 15, { align: 'right' });
+            doc.setTextColor(0, 0, 0);
+            doc.text('Web Immunify', 15, footerPosition);
+            doc.text('www.webimmunify.com', 15, footerPosition + 5);
+            doc.text('This document is strictly confidential', doc.internal.pageSize.width - 15, footerPosition, { align: 'right' });
 
             // Save the PDF
             doc.save('Web_Immunify_Quote.pdf');
