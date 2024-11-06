@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Immunify Quote Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .form-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #preview {
+            display: none;
+            background-color: white;
+            padding: 30px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+        .confidential {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .logo {
+            max-width: 200px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Quote Generator</h1>
+        <div class="form-group">
+            <label for="scope">Scope:</label>
+            <textarea id="scope" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="duration">Duration (days):</label>
+            <input type="number" id="duration" required min="1">
+        </div>
+        <div class="form-group">
+            <label for="retest">Retest Duration (days):</label>
+            <input type="number" id="retest" required min="1">
+        </div>
+        <div class="form-group">
+            <label for="rate">Price per Day ($):</label>
+            <input type="number" id="rate" required min="1">
+        </div>
+        <div class="form-group">
+            <label for="total">Total Price ($):</label>
+            <input type="number" id="total" readonly>
+        </div>
+        <button onclick="generatePDF()">Generate PDF</button>
+    </div>
+
+    <div id="preview">
+        <img src="https://cdn.prod.website-files.com/630e5c4a69cd616fda8ec74d/6318cd3609b5a9a97f42bd39_web-immunify-logo-inverted-rgb.svg" class="logo">
+        <div class="confidential">CONFIDENTIAL</div>
+        <h2>Penetration Testing Quote</h2>
+        <p><strong>Date:</strong> <span id="current-date"></span></p>
+        <p><strong>Scope:</strong><br><span id="preview-scope"></span></p>
+        <p><strong>Duration:</strong> <span id="preview-duration"></span> days</p>
+        <p><strong>Retest Duration:</strong> <span id="preview-retest"></span> days</p>
+        <p><strong>Rate per Day:</strong> $<span id="preview-rate"></span></p>
+        <p><strong>Total Price:</strong> $<span id="preview-total"></span></p>
+        <hr>
+        <p>Web Immunify<br>
+        <a href="https://webimmunify.com">www.webimmunify.com</a></p>
+    </div>
+
+    <script>
+        // Calculate total when inputs change
+        ['duration', 'retest', 'rate'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateTotal);
+        });
+
+        function calculateTotal() {
+            const duration = Number(document.getElementById('duration').value) || 0;
+            const retest = Number(document.getElementById('retest').value) || 0;
+            const rate = Number(document.getElementById('rate').value) || 0;
+            const total = (duration + retest) * rate;
+            document.getElementById('total').value = total;
+        }
+
+        function generatePDF() {
+            // Update preview
+            document.getElementById('current-date').textContent = new Date().toLocaleDateString();
+            document.getElementById('preview-scope').textContent = document.getElementById('scope').value;
+            document.getElementById('preview-duration').textContent = document.getElementById('duration').value;
+            document.getElementById('preview-retest').textContent = document.getElementById('retest').value;
+            document.getElementById('preview-rate').textContent = document.getElementById('rate').value;
+            document.getElementById('preview-total').textContent = document.getElementById('total').value;
+            
+            // Show preview for HTML2Canvas
+            document.getElementById('preview').style.display = 'block';
+
+            // Create PDF
+            html2canvas(document.getElementById('preview')).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF();
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save('Web_Immunify_Quote.pdf');
+                
+                // Hide preview after generating PDF
+                document.getElementById('preview').style.display = 'none';
+            });
+        }
+    </script>
+</body>
+</html>
