@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Byte to Text Decoder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #output {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Byte to Text Decoder</h2>
+        <p>Enter bytes separated by commas:</p>
+        <textarea id="byteInput" placeholder="Example: 72,101,108,108,111"></textarea>
+        <button onclick="decodeBytes()">Decode</button>
+        <div>
+            <h3>Output:</h3>
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <script>
+        function decodeBytes() {
+            try {
+                // Get input value and split by commas
+                const input = document.getElementById('byteInput').value;
+                const bytes = input.split(',').map(byte => parseInt(byte.trim()));
+                
+                // Convert bytes to characters
+                const text = String.fromCharCode(...bytes);
+                
+                // Display result
+                document.getElementById('output').textContent = text;
+            } catch (error) {
+                document.getElementById('output').textContent = 'Error: Invalid input';
+            }
+        }
+    </script>
+</body>
+</html>
